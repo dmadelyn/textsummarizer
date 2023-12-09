@@ -1,5 +1,8 @@
 import argparse
 from collections import Counter
+import csv
+
+from simple_baseline import text_rank
 
 
 def get_ngrams(tokens, n):
@@ -39,6 +42,37 @@ def evaluation(system_output, gold_standard, n):
 
     return f1
 
+# Not used in script
+
+
+def evaluate_model(n):
+    file_path = 'kindle_reviews.csv'
+
+    with open(file_path, 'r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        score_sum = 0
+        count = 0
+        for line_num, row in enumerate(csv_reader):
+            review_text = row['reviewText']
+            gold_standard = row['summary']
+            system_output = text_rank(review_text, 1)
+
+            score_sum += evaluation(system_output, gold_standard, n)
+            count += 1
+
+            if line_num % 100 == 0:
+                print(
+                    f"Line {line_num} done. Current Score is: {score_sum / count}. Count={count}, score_sum={score_sum}")
+
+    average_score = score_sum / count
+    print(
+        f"Final Score is: {average_score}. Count={count}, score_sum={score_sum}")
+
+    return average_score
+
+
+evaluate_model(1)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -53,6 +87,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     rouge = evaluation(
-        args.system_output, args.gold_standard)
+        args.system_output, args.gold_standard, int(args.n))
 
     print(f"ROUGE-N SCORE: {rouge}")
